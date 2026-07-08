@@ -1,0 +1,326 @@
+UdemyDocker
+
+_____________________________________________________________________________DERS 2 
+
+-container teknolojisi için kullanılır
+
+-gerekli kavramlar:
+	temel bilgisayar kullanım bilgisi
+	linux OS konsepti
+	linux shell
+	temel network bilgisi
+
+
+-____________________________________________/*	LINUX SHELL */
+-Navigasyon ve dosya işlemleri:
+	
+	- pwd: print working directory - hangi dizinde olduğunu gösterir
+
+	- ls/ -la : bulunduğun klasordeki tüm dosyaları(gizliler dahil) detaylarıyla listeler. izinleri görmek için çok önemli.
+
+	-cd <klasör_adı> : klasor adı değiştirmeni sağlar. 
+
+	-mkdir <klasör_adı>: yeni bir klasör oluşturur.
+
+-Dosya okuma ve düzenleme:
+	
+	- cat <dosya_adı>: küçük dosyaların içeriğini terminale hızlıca basar.
+
+	- tail -f <dosya_adı>: dosyanın son satırını canlı olarak takip eder. Docker loglarını canı izlerken bunun mantığını kullanacaksın.
+
+	- nano <dosya_adı>: terminal içinde çalışan basit bir metin editörüdür. Konfigürasyon dosyalarını sunucu üzerinde düzenlemek için hayat kurtarır.
+
+-Sistem ve Süreç Takibi:
+	
+	- ps aux || top : arka planda çalışan uygulamaları (süreçleri) listeler. Docker containerları da aslında birer süreçtir.
+
+	- grep: Büyük bir çıktının içinde arama yapmanı sağlar. 
+	örnek olarak "ps aux | grep node"
+
+
+
+-____________________________________________/* Temel Network Mantığı*/
+-IP adress and Localhost:
+
+	-127.0.0.1 ve localhost: kendi bilgisayarını yani hostu temsil eder
+
+	-!- Docker Tuzağı: Docker containerının içindeyken localhost dersen, container kendi içine bakmaya çalışır, senin ana bilgisayarına değil. Bu durum çok önemli olabilir.
+
+-Port Logic:
+	
+	-80 / 443: standart web trafiği (HTTP / HTTPS)
+	-3306: MySQL db portu
+	-5432: PostgreSĞL db portu
+
+-Port Forwarding / Mapping:
+
+	-docker konteyneri dış dünyaya kapalı kutu gibidir. konteyner içindeki web sitesine dışarıdan erilebilmek için bir kapı açman gerekir.
+
+	- Ana bilgisayarının 8080 portuna gelen istekleri, konteynerin 3000 portuna yönlendirirsin. Docker öğrenirken en çok 8080:3000 gibi eşleştirmeler yapacaksın.
+
+
+
+
+_______________________________________________________________________________DERS 4
+
+işletim sistemleri kernel(çekirdek), UI ve APPS olarak 3 bileşenden oluşur
+	
+	kernel nedir?
+		fiziksel altyapı ile uygulama arasındaki işlemleri yapan şeydir. bilgisayarın tüm kaynaklarını yönetme işi kernele aittir.
+
+_______________________________________________________________________________DERS 5
+
+	sanallaştırma - VIRTUALIZATION
+
+		sever: -hizmet sunar	-güçlü ve yüksek kapasiteli işlem gücü
+				-uzun süreli, kesintisiz ve çoklu istekelere cevap üzere tasarlanmıştır.
+
+		client: -hizmeti kullanır. 		-görece düşük kapasiteli işlem gücü.
+				- tek bir kullanıcıya hizmet vermek için tasarlanmıştır. Uzun süreli ve kesintisiz çalışma öncelikli değildir.
+
+
+_______________________________________________________________________________DERS 6
+
+	container nedir?
+
+		bir uygulamanın çalışması için gereken kodu, kütüphaneleri, bağımlılıkları ve çalışma ortamını tek paket haline getiren, birbirinden izole edilmiş hafif bir processtir.
+
+		docker sıfırdan bir işletim sistemi kurmaz. Üzerinde çalıştığı ana bilgisayarın (host OS) Linux çekirdeğini (kernel) ortaklaşa kullanır.
+			-sadece uygulamanın çalışması için gerekli dosyaları paketler.
+			-Namesspaces denilen bir linux özelliği sayesinde her konteyner kendini dünyadaki tek uygulama sanır.
+			-Cgroups denilen özellik sayesinde de bi konteynerin bilgisayarının RAM'ini ve CPU'sunu sömürmesi engellenir.
+
+		bu sayede bilgisayarda bir VM açtığında bilgisayar kasar, aynı bilgisayarda aynı anda 50 tane docker containerını kolayca çalıştırabilirsin. Çünkü her biri sadece küçük birer process gibidir.
+
+
+	neden kullanılır?
+
+		bir proje geliştirirken uygulamayı çevre şartlarıyla birlikte paketlediğin için, o konteyner senin bilgisayarında nasıl çalışıyorsa başka bir cihazda da öyle çalışmalı. 
+
+		aynı bilgisayarda bir dili hem eski hem yeni sürümüyle kullanılması ihtiyacı varsa bu eski sürümlü ve yeni sürümlü projeyi iki farklı container içine koyarak versiyon hataları ve path çakışmalarından kurtulunur.
+
+		bilgisayara ayrıca postgreSQL kurmak istendiğinde işlem hem uzun sürer hem de arkaplanda bir servis olarak çalışarak sistemi yavaşlatır. Docker "docker run postgres" yazarak saniyeler içinde db hazır olur. iş bitince de tek komutla silinir arkada hiç çöp dosya kalmaz. 
+
+	namespaces nedir?
+
+		linuxta bir sürecin neleri görebileceğini sınırlar. izolasyon aracıdır.
+
+			- PID Namespace: konteyner içindeki uygulama ps komutu yazdığında sadece kendisinş (Process ID: 1 olarak) görür. Ana bilgisayarda çalışan diğer yüzlerce uygulamadan haberi bile olmaz.
+			
+			- NET Namespace: her konteynerin kendine ait sanal bir ağ kartı(veth),IP adresi ve port tablosu olur.
+			
+			- MNT Namespace: konteyner, ana bilgisayarın diskini göremez. ona özel olarak tanımlanan ve sadece kendi kütüphanelerinin bulunduğu küçük bir klasörü tüm bilgisayarın diski gibi algılar.
+			
+			- UTS Namespace: konteynerin kendine ait bir bilgisayar adı (hostname) olmasını sağlar.
+
+	Control Groups nedir?
+
+		konteyner içindeki kod sonsuz döngüye girerek bilgisayarın tüm CPU ve RAMini tüketirse diğer uygulamalar çöker.
+
+		- Cgroups, bir konteynerin ana bilgisayardan en fazla ne kadar kaynak tüketebileceğini belirler. Bir konteyner önceden belirlenen sınırlarını kullanmaya başladığında Cgroups, ana sisteme zarar vermeden kendi içinde onun durdurulmasına yardımcı olur.
+
+	Layered File System / UnionFS nedir?
+
+		bir konteynerın saniyeler içinde ayağa kalkmasının sebebi imajların üst üste binen dosyalardan yani layered file olmasıdır.
+
+		-en altta temel bir linux katmanı, üstünde Python katmanı, en üstte ise senin kodunun olduğu katman vardır.
+
+		-bu katmanlar "read-only" formatta kilitlidir.
+
+		-konteyner çalıştığı anda en üstte incecik bir "Write" katman eklenir. Konteyner içinde yaptığın tüm değişiklikler, dosya silmeler, log yazmalar sadece bu en üstteki geçici katmana yazılır. Konteyner kapatıldığında bu katman uçar, alttaki ana imaj ilk günkü gibi tertemiz kalır.
+
+	Bir Konteyner Nasıl Oluşturulur?
+
+		1- Image Çözümlenir: ihtiyaç olan uygulamanın dosyaları (UnionFS katmanları) diskte hazırlanır.
+
+		2- Duvarlar Örülür: Linux kerneline talimat verilerek yeni bir Namespace kümesi oluşturulur
+
+		3- Cgroups ile RAM ve CPU limitleri sürece tanımlanır.
+
+		4- Process Başlatılır: İzole edilmiş bu güvenli alanda uygulamanın başlangıç komutu (node server.js) çalıştırılır ve konteyner hayat bulur.
+
+________________________________________________________________________________DERS 7
+
+	docker engine nedir?
+
+		docker engine, docker teknolojisinin arkasındaki ana motordur. Bilgisayarına docker kurduğunda arka planda çalışan, konteynerleri oluşturan, çalıştıran ve yöneten asıl sistem budur.
+
+	docker engine mimari olarak şu 3 katmandan oluşur:
+
+		-docker CLI(commend line interfaces): en üstteki bu katman terminaldeki komut yazılan yerdir.
+
+		-REST API: ortadaki bulunan bu katman CLI ile arka plandaki motorun konuşmasını sağlar.
+
+		-docker daemon (dockerd): bilgisayarın arka planda çalışan motorudur.  
+
+________________________________________________________________________________DERS 8
+
+	Image ve container
+
+		-docker image bir containerin ayağa kalkması ve uygulamanın çalışması için gereken kaynak kodları, kütüphaneleri, runtimeını, ortam değişkenlerini ve konfigürasyon dosyalarını içeren, read-only bir paket şablonudur.
+
+		-container bir imagein çalışan bir kopyasıdır. aynı image ile birden fazla container oluşturulabilir. docker yüklü bütün bilgisayarlarda kullanılabilir.
+
+
+________________________________________________________________________________DERS 9
+
+	container ve VM farkı
+
+		-container içinde bir işletim sistemi çekirdeğine ihtiyaç duyulmadığı için ortamda kaynak tüketen onlarca işletim sistemi bulunmaz.
+
+________________________________________________________________________________DERS 20
+
+	docker CLI
+
+		-komut satırı arayüzü (commend line interface)
+
+		Usage:  docker [OPTIONS] COMMAND
+
+A self-sufficient runtime for containers
+
+Common Commands:
+  run         Create and run a new container from an image
+  exec        Execute a command in a running container
+  ps          List containers
+  build       Build an image from a Dockerfile
+  bake        Build from a file
+  pull        Download an image from a registry
+  push        Upload an image to a registry
+  images      List images
+  login       Authenticate to a registry
+  logout      Log out from a registry
+  search      Search Docker Hub for images
+  version     Show the Docker version information
+  info        Display system-wide information
+
+Management Commands:
+  agent*      Docker AI Agent Runner
+  ai*         Docker AI Agent - Ask Gordon
+  builder     Manage builds
+  buildx*     Docker Buildx
+  compose*    Docker Compose
+  container   Manage containers
+  context     Manage contexts
+  debug*      Get a shell into any image or container
+  desktop*    Docker Desktop commands
+  dhi*        CLI for managing Docker Hardened Images
+  extension*  Manages Docker extensions
+  image       Manage images
+  init*       Creates Docker-related starter files for your project
+  manifest    Manage Docker image manifests and manifest lists
+  mcp*        Docker MCP Plugin
+  model*      Docker Model Runner
+  network     Manage networks
+  offload*    Docker Offload
+  pass*       Docker Pass Secrets Manager Plugin (beta)
+  plugin      Manage plugins
+  scout*      Docker Scout
+  system      Manage Docker
+  volume      Manage volumes
+
+Swarm Commands:
+  swarm       Manage Swarm
+
+Commands:
+  attach      Attach local standard input, output, and error streams to a running container
+  commit      Create a new image from a container's changes
+  cp          Copy files/folders between a container and the local filesystem
+  create      Create a new container
+  diff        Inspect changes to files or directories on a container's filesystem
+  events      Get real time events from the server
+  export      Export a container's filesystem as a tar archive
+  history     Show the history of an image
+  import      Import the contents from a tarball to create a filesystem image
+  inspect     Return low-level information on Docker objects
+  kill        Kill one or more running containers
+  load        Load an image from a tar archive or STDIN
+  logs        Fetch the logs of a container
+  pause       Pause all processes within one or more containers
+  port        List port mappings or a specific mapping for the container
+  rename      Rename a container
+  restart     Restart one or more containers
+  rm          Remove one or more containers
+  rmi         Remove one or more images
+  save        Save one or more images to a tar archive (streamed to STDOUT by default)
+  start       Start one or more stopped containers
+  stats       Display a live stream of container(s) resource usage statistics
+  stop        Stop one or more running containers
+  tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+  top         Display the running processes of a container
+  unpause     Unpause all processes within one or more containers
+  update      Update configuration of one or more containers
+  wait        Block until one or more containers stop, then print their exit codes
+
+Global Options:
+      --config string      Location of client config files (default "/home/utkusinaorhan/.docker")
+  -c, --context string     Name of the context to use to connect to the daemon (overrides
+                           DOCKER_HOST env var and default context set with "docker context use")
+  -D, --debug              Enable debug mode
+  -H, --host string        Daemon socket to connect to
+  -l, --log-level string   Set the logging level ("debug", "info", "warn", "error", "fatal")
+                           (default "info")
+      --tls                Use TLS; implied by --tlsverify
+      --tlscacert string   Trust certs signed only by this CA (default
+                           "/home/utkusinaorhan/.docker/ca.pem")
+      --tlscert string     Path to TLS certificate file (default
+                           "/home/utkusinaorhan/.docker/cert.pem")
+      --tlskey string      Path to TLS key file (default "/home/utkusinaorhan/.docker/key.pem")
+      --tlsverify          Use TLS and verify the remote
+  -v, --version            Print version information and quit
+
+Run 'docker COMMAND --help' for more information on a command.
+
+For more help on how to use Docker, head to https://docs.docker.com/go/guides/
+________________________________________________________________________
+
+
+cli'de docker yazdığında çıkan commandlarla --help kullanarak ne işe yaradığını öğren!!!
+
+
+container lifetime : container değişir ama imagelerde bir problem olmadığı müddetçe değişmez eski kayıtların kaybolmaması için volume kullanılır. 
+
+_____________________________________________________________________________DERS 26
+
+	docker volume
+
+		-volume, container ve image gibi bir docker objesidir.
+		-image veya container yaratır gibi yaratılırlar.
+		-docker deamon'ın kurulu olduğu host makine üzerinde kurulurlar. Ama istenirse çeşitli volume driverlarına cloude gibi driverlara kurulabilirler.
+		-container içinde yazılmış gibi görünürler bu sebeple de herhangi bir sorun yaratmaz
+		-bir volume birden fazla containera bağlanabilir.
+
+
+		SYNTAX: 
+
+				docker volume create [VOLUME_NAME]
+				
+				docker volume inspect [VOLUME_NAME] "volume detaylarını gösterir."
+					
+					-> inspect satırından sonra alınan cevaptaki Mountpoint satırı volume içine kaydedilen dataların direkt olarak bulunduğu klasörü gösterir.
+
+				docker container run -it -v ilkvolume:/uygulama alpine sh
+					
+					-> -it ile bağlantı açılıyor. -v ile volume bağlanıyor. container içindeki uygulama isimli klasöre bağlanan ilkvolume isimli volume ve alpine imajı ile bir conteiner yarat ve shell aç.
+
+					-> volume'ün bağlanacağı klasörün container içinde olması gerekmez. varsa problem olmaz ama eğer yoksa da kendi container oluşturulurken oluşturulur.  
+
+
+				docker volume ls
+					
+					-> bu kod satırı ile aktif olan volume varsa listelenir.
+
+				docker container run -it -v ilkvolume:/deneme3:ro centos sh
+					
+					-> volume bu containera read-only olarak bağlanıyor. centos image ile oluşturulur ve açılan shellde : 
+						-> touch test.txt "test.txt dosyası oluşturma kodu." çıktı olarak:
+							-> touch: cannot touch 'test.txt': Read-only file system
+
+___________________________________________________________________________DERS 27
+
+	bind mounts
+
+		-host üzerindeki bir klasör ya da bir dosyayı Container içerisine map edebiliriz. buna bind mount denir.
+		-dockerda verileri kalıcı hale getirmek veya container ile host arasında dosya paylaşmak için kullanılan en temel iki yöntemden biridir diğeri docker volume.
+
+___________________________________________________________________________DERS 28
+
