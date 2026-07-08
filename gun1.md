@@ -1,0 +1,1 @@
+docker CLI komutları ve ne olduğu hakkında çalışma yaptım. bunun için udemy kaynakları ile yapay zeka kullandım. bunlar yaparken kullanılması gereken birkaç Linux Shell komutuna da ekstra olarak çalıştım.
