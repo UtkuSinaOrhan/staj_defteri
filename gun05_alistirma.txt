@@ -1,0 +1,323 @@
+1: İlk olarak sistemde bir temizlik yapalım ki alıştırmalarımızla çakışma olmasın. Varsa sistemdeki tüm containerları ve kullanıcı tanımlı bridge networkleri silelim.
+
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker network ls
+NETWORK ID     NAME      DRIVER    SCOPE
+9a42d78d3357   bridge    bridge    local
+3a743a540fef   host      host      local
+cc0e45756174   none      null      local
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+->
+
+
+
+
+2: "alistirma-agi" adında ve 10.10.0.0/16 subnetinde, 10.10.10.0/24 ip-aralığından ip dağıtacak ve gateway olarak da 10.10.10.10 tanımlanacak bir kullanıcı tanımlı bridge network yaratalım. (bu sizin yerel ağınızda kullandığınız bir ağ aralığıysa başka bir cidr kullanabilirsiniz). Bu ağın özelliklerini inspect komutuyla kontrol edin. 
+
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker network create --subnet 10.10.0.0/16 --ip-range 10.10.10.0/24 --gateway 10.10.10.10 alistirma-agi
+b1558aaca1c7f08297eccc7648452e29aafa9e31fd7dec996f374902aaa28a84
+
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker network inspect alistirma-agi
+[
+    {
+        "Name": "alistirma-agi",
+        "Id": "b1558aaca1c7f08297eccc7648452e29aafa9e31fd7dec996f374902aaa28a84",
+        "Created": "2026-07-11T16:31:26.524188303Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "10.10.0.0/16",
+                    "IPRange": "10.10.10.0/24",
+                    "Gateway": "10.10.10.10"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {
+            "com.docker.network.enable_ipv4": "true",
+            "com.docker.network.enable_ipv6": "false"
+        },
+        "Labels": {},
+        "Containers": {},
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "10.10.0.0/16": {
+                        "IPsInUse": 3,
+                        "DynamicIPsAvailable": 255
+                    }
+                }
+            }
+        }
+    }
+]
+
+->
+
+
+
+
+3: nginx imajının 1.16 versiyonundan web1 adından detached bir container yaratın. Bu containerı default bridge networküne değil de alistirma-agi networküne bağlı olarak yaratın. Host'un 8080 tcp portuna gelen isteklerin bu containerın 80 portuna gitmesini sağlayın.
+
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker container run -d --network alistirma-agi -p 8080:80 --name web1 nginx:1.16
+Unable to find image 'nginx:1.16' locally
+1.16: Pulling from library/nginx
+50f62e3cdaf7: Pull complete
+5546cfc92772: Pull complete
+54fec2fa59d0: Pull complete
+Digest: sha256:d20aa6d1cae56fd17cd458f4807e0de462caf2336f0b70b5eeb69fcaaf30dd9c
+Status: Downloaded newer image for nginx:1.16
+e7bb8380e4f428c52032a4912199f0db8c199c903acb81a6f22b46e6399e7fa6
+->
+
+
+4: Bu sisteme browser üzerinden erişin ve daha sonra bir kaç kez sayfayı refresh edin. Ardından bu container'ın loglarına erişerek az önceki erişimlerinizin loglarını kontrol edin. 
+
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker logs web1
+10.10.10.10 - - [11/Jul/2026:16:43:04 +0000] "GET / HTTP/1.1" 200 612 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+2026/07/11 16:43:04 [error] 7#7: *1 open() "/usr/share/nginx/html/favicon.ico" failed (2: No such file or directory), client: 10.10.10.10, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "127.0.0.1:8080", referrer: "http://127.0.0.1:8080/"
+10.10.10.10 - - [11/Jul/2026:16:43:04 +0000] "GET /favicon.ico HTTP/1.1" 404 555 "http://127.0.0.1:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:43:12 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:43:12 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:44:11 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:44:11 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:44:11 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+->
+
+
+
+
+5: Container loglarını follow modunda takip ederken browser'dan bu web sitesinde olmayan bir url'e gitmeye çalışın. Örneğin xyz.html Bunun ürettiği hatayı canlı olarak loglardan takip edin. 
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker logs -f web1
+10.10.10.10 - - [11/Jul/2026:16:43:04 +0000] "GET / HTTP/1.1" 200 612 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+2026/07/11 16:43:04 [error] 7#7: *1 open() "/usr/share/nginx/html/favicon.ico" failed (2: No such file or directory), client: 10.10.10.10, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "127.0.0.1:8080", referrer: "http://127.0.0.1:8080/"
+10.10.10.10 - - [11/Jul/2026:16:43:04 +0000] "GET /favicon.ico HTTP/1.1" 404 555 "http://127.0.0.1:8080/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:43:12 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:43:12 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:44:11 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:44:11 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:44:11 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+10.10.10.10 - - [11/Jul/2026:16:45:41 +0000] "GET / HTTP/1.1" 304 0 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+2026/07/11 16:45:47 [error] 7#7: *4 open() "/usr/share/nginx/html/helllo" failed (2: No such file or directory), client: 10.10.10.10, server: localhost, request: "GET /helllo HTTP/1.1", host: "127.0.0.1:8080"
+10.10.10.10 - - [11/Jul/2026:16:45:47 +0000] "GET /helllo HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+2026/07/11 16:45:51 [error] 7#7: *4 open() "/usr/share/nginx/html/hell" failed (2: No such file or directory), client: 10.10.10.10, server: localhost, request: "GET /hell HTTP/1.1", host: "127.0.0.1:8080"
+10.10.10.10 - - [11/Jul/2026:16:45:51 +0000] "GET /hell HTTP/1.1" 404 555 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36" "-"
+^Cutkusinaorhan@ASUS-TUF-GAMING-F15:~$
+->
+
+
+
+
+
+6: ozgurozturknet/adanzyedocker imajından test1 adından bir container yaratın. -dit ile yaratın sh shellini açın. Bu container default bridge network'e bağlı olsun. 
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker container run -dit --name test1 adanzyedocker:v1 sh
+
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker network inspect bridge
+[
+    {
+        "Name": "bridge",
+        "Id": "9a42d78d3357491a5af75755b2b5e2d30bea39c7f7a2a204986f94d5edf3e6a6",
+        "Created": "2026-07-11T16:25:35.711554767Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.17.0.0/16",
+                    "Gateway": "172.17.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {
+            "com.docker.network.bridge.default_bridge": "true",
+            "com.docker.network.bridge.enable_icc": "true",
+            "com.docker.network.bridge.enable_ip_masquerade": "true",
+            "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+            "com.docker.network.bridge.name": "docker0",
+            "com.docker.network.driver.mtu": "1500"
+        },
+        "Labels": {},
+        "Containers": {
+            "5594953e5818fd918fb669450c2d824333a054ecdaa3fb1bdbb99147ed6e1ece": {
+                "Name": "test1",
+                "EndpointID": "3e42c1cfde48be4c39c11f199a47e66f8da6995ea40c4f140174d5e4518cdbb6",
+                "MacAddress": "c6:40:3a:2f:44:b4",
+                "IPv4Address": "172.17.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "172.17.0.0/16": {
+                        "IPsInUse": 4,
+                        "DynamicIPsAvailable": 65532
+                    }
+                }
+            }
+        }
+    }
+]
+
+->
+
+
+
+
+
+7: Bu container'ı "alistirma-agi" networküne de bağlayın.
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker network connect alistirma-agi test1
+->
+
+
+8: Container'a attach işlemiyle bağlanın ve container içerisinden web1'i pinglemeye çalışın. Container'ı kapamadan çıkın. 
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker attach test1
+/usr/src/myapp # ping web1
+PING web1 (10.10.10.0) 56(84) bytes of data.
+64 bytes from web1.alistirma-agi (10.10.10.0): icmp_seq=1 ttl=64 time=0.071 ms
+64 bytes from web1.alistirma-agi (10.10.10.0): icmp_seq=2 ttl=64 time=0.074 ms
+64 bytes from web1.alistirma-agi (10.10.10.0): icmp_seq=3 ttl=64 time=0.074 ms
+64 bytes from web1.alistirma-agi (10.10.10.0): icmp_seq=4 ttl=64 time=0.073 ms
+^C
+--- web1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 83ms
+rtt min/avg/max/mdev = 0.071/0.073/0.074/0.001 ms
+/usr/src/myapp # read escape sequence
+->
+
+
+
+9: Bu containerların çalıştığını kontrol edin ve ardından çalışıyor haldeyken bunları silin. 
+
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker ps
+CONTAINER ID   IMAGE              COMMAND                  CREATED          STATUS          PORTS                                     NAMES
+5594953e5818   adanzyedocker:v1   "sh"                     5 minutes ago    Up 5 minutes    80/tcp                                    test1
+e7bb8380e4f4   nginx:1.16         "nginx -g 'daemon of…"   17 minutes ago   Up 17 minutes   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   web1
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker rm -f 559 e7bb
+559
+e7bb
+->
+
+
+
+10: Terminalde eğitim klasörünün altındaki kisim4/bolum43 klasörüne geçin. 
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\AdanZyeDocker-master> cd kisim4\bolum43
+->
+
+
+
+11: ozgurozturknet/webkayit imajından websrv adinda detached bir container yaratın. "alistirma-agi" networküne bağlı olsun. Maksimum 2 logical cpu kullanacak şekilde kısıtlansın. 80 portunu host üstündeki 80 portuyla publish edin. env.list dosyasının bu containera enviroment variable olarak aktarılmasını sağlayın. 
+
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\AdanZyeDocker-master\kisim4\bolum43> docker container run -d --network alistirma-agi --cpus="2" -p  80:80 --env-file env.list --name websrv ozgurozturknet/webkayit
+Unable to find image 'ozgurozturknet/webkayit:latest' locally
+latest: Pulling from ozgurozturknet/webkayit
+85cf4fc86478: Pull complete
+46017765526c: Pull complete
+8c04561117a4: Pull complete
+814ae7711d3c: Pull complete
+d6b7434b63a2: Pull complete
+8ec398bc0356: Pull complete
+21a3ca16847f: Pull complete
+cabc7e54115f: Pull complete
+a725e4aedc93: Pull complete
+83d8859e9744: Pull complete
+267dd10c80bb: Pull complete
+4896fed78b6b: Pull complete
+970dadf4ccb6: Pull complete
+9c3d824d0ad5: Pull complete
+e74d71e9611d: Pull complete
+280386098458: Pull complete
+1433594449f4: Pull complete
+9e316fd5b3b3: Pull complete
+578b40496c37: Pull complete
+Digest: sha256:8816eb13e7f175d6ee80244f4a22eba544a5fbcbba29c8e82db1b79634521a00
+Status: Downloaded newer image for ozgurozturknet/webkayit:latest
+4075159866eead7e11e71729dcbfd607d738264c2d5440b8fdb66f0566feb272
+->
+
+
+
+
+
+12: ozgurozturknet/webdb imajından mysqldb adinda detached bir container yaratın. "alistirma-agi" networküne bağlı olsun. Maksimum 1gb memory kullanacak şekilde kısıtlansın. envmysql.list dosyasının bu containera enviroment variable olarak aktarılmasını sağlayın. 
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\AdanZyeDocker-master\kisim4\bolum43> docker container run -d --network alistirma-agi --memory=1g --env-file envmysql.list --name mysqldb ozgurozturknet/webdb
+Unable to find image 'ozgurozturknet/webdb:latest' locally
+latest: Pulling from ozgurozturknet/webdb
+f5b0fbeeef97: Pull complete
+6ddae009e760: Pull complete
+a5a3ad97e819: Pull complete
+48bede7828ac: Pull complete
+804555ee0376: Pull complete
+380afa2e6973: Pull complete
+c53bab458734: Pull complete
+31f1f8385b27: Pull complete
+327ae67bbe7b: Pull complete
+8d6ca35c7908: Pull complete
+ca9d72777f90: Pull complete
+2d7aad6cb96e: Pull complete
+Digest: sha256:7f4395879908dbd63fff2696c45b04e6d0d06b21978178bef069e1db75795f81
+Status: Downloaded newer image for ozgurozturknet/webdb:latest
+a3c4cf5057fd192ed6f5d18032ca1880558e1ff1bfb4200bf5b23592eda23c5a
+->
+
+
+
+
+13: mysqldb containerının loglarını kontrol ederek düzgün şekilde başlatılabildiğini teyit edin. 
+
+-> çalışıyor <-
+
+
+14: Browser'dan websrv container'ının yayınladığı web sitesine bağlanın. Karşınıza çıkan formu doldurup bir tane jpg dosyayı da seçerek add tuşuna basın. Ardından kayitlari gör diyerek işlemin başarılı olduğunu teyit edin. 
+
+-> çalışıyor <-
+
+15: Oluşturduğunuz containerları ve alistirma-agi'ni silin.
+->sildim<-

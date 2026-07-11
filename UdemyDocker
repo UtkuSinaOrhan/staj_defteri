@@ -1373,3 +1373,134 @@ ________________________________________________________________________________
 
 ----------------------"docker container run --log-driver <logging_driver_adi> <image_adi>" : varsayılan json-file yerine başka logging driverlar kurulmuşsa bunların driver olarak ataması yapılır.
 						-eğer buraya yazılan driver kurulmamışsa hata verir ve container kurulmaz.
+
+
+
+
+___________________________________________________________________________DERS 39
+
+	docker stats ve top
+
+		------------------"docker top <container_adi>" : bu komut ile adı girilen containerın içine girmeye gerek kalmadan o containerda hangi processler çalışıyor o görülür.
+
+		------------------"docker stats" : containerların ne kadar CPU RAM IO kullandığını gösterir. isim yazılmadığında hepsi gözükür.
+
+
+____________________________________________________________________________DERS 40
+
+		container CPU ve Memory limits
+
+			-gerçek production ortamda oluşturulan containerın tüm sistem kaynaklarını tüketerek bulunduğu host üzerinde başka bir container veya uygulama çalışmasına kaynak sağlanamaması en yaygın problemlerden biridir.
+
+			- bu durumda docker ps -a komutu ile bakıldığında exited[137] ile kapanan containerlar out of memory ile kapandığı anlamına gelir.
+
+			-containerlar varsayılan olarak üzerinde çalıştığı hostun tüm CPU ve memory kaynaklarını herhangi bir kısıtlama olmadan özgürce kullanabilir.
+
+			-böyle bir durumda limit koymak gerekebilir.
+
+
+		----------------"docker container run -d --memory=<istenen_RAM_limiti> [IMAGE]" :
+			bu şekilde ram limiti konulabilir. 
+
+			-ram limiti konulmuş ve konulmamış hali için docker stats çıktısı:
+
+			CONTAINER ID   NAME           CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O        PIDS
+			30435add37c9   magical_jang   0.00%     5.723MiB / 100MiB     5.72%     872B / 126B     0B / 4.1kB       82 		*ram limiti var
+			cb379233a704   jovial_nobel   0.00%     6.895MiB / 7.567GiB   0.09%     1.82kB / 126B   4.74MB / 4.1kB   82 		*ram limiti yok
+
+
+		-------"docker container run -d --memory=<istenen_RAM_limiti> --memory-swap=<ekstra_RAM_limiti>" : 
+
+		-bu şekilde önceden konulmuş ram limiti aşıldığında sağlanacak ekstra ram limiti eklemiş olduk. ilk limit aşılmadığı müddetçe bu swap kullanılmaz.
+
+		-docker stats çıktısı:
+
+		CONTAINER ID   NAME            CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O        PIDS
+		9edc873c9640   thirsty_hertz   0.00%     5.445MiB / 100MiB     5.45%     872B / 126B     0B / 4.1kB       82
+		30435add37c9   magical_jang    0.00%     5.242MiB / 100MiB     5.24%     998B / 126B     0B / 4.1kB       82
+		cb379233a704   jovial_nobel    0.00%     6.961MiB / 7.567GiB   0.09%     1.95kB / 126B   4.74MB / 4.1kB   82
+
+
+
+_________________CPU LIMITATION_______________
+
+	-cpu memory gibi byte ile ölçülen ve bu şekilde limitlenebilen bir yapı değil.
+
+	-cpu kısıtlamasında logical processorler containerlara ayrılarak bir kısıtlama yapılabiliyor.
+
+	-benim sistemimde 14 core (çekirdek) 20 logical processor (mantıksal işlemci) var.
+
+	
+
+
+	---------------"docker container run -d --cpus="1.5" --cpuset-cpu="0,3" adanzyedocker:v1"
+
+				Komutun Parçalanmış Anlamı
+				docker container run: Yeni bir Docker konteynerini oluşturup çalıştırır. (Kısaca docker run da yazabilirsiniz, ikisi de aynı işi yapar).
+				
+				-d (Detached Mode): Konteynerin arka planda (arka planda bir servis gibi) çalışmasını sağlar. Terminalinizi kilitlemez, böylece siz başka komutlar yazmaya devam edebilirsiniz.
+				
+				--cpus="1.5": Bu konteynerin toplamda en fazla 1.5 CPU çekirdeği kadar güç tüketebileceğini belirtir. Örneğin, işlemci yoğun bir iş yapsa bile 1.5 çekirdek performansını geçemez.
+				
+				--cpuset-cpus="0,3": Konteynerin hangi fiziksel çekirdekleri kullanabileceğini seçer. Bu örnekte konteyner, işlemcinizin 0. ve 3. çekirdekleri (yani 1. ve 4. çekirdekler) üzerinde çalışmaya zorlanır. Diğer çekirdeklere dokunamaz.
+				
+				adanzyedocker:v1: Konteynerin hangi Docker imajından (ve hangi etiketle/versiyonla - v1) ayağa kaldırılacağını belirtir.
+
+
+
+_______________________________________________________________DERS 41
+
+	environment variables
+
+		-işletim sistemi bazında geçerli olan ve her yerden çağırılabilen değişkenlere denir.
+
+		-windows powershellde kullanılan geçerli komut: "Get-ChildItem Env:"
+
+			-çıktısı o işletim sisteminde bulunan tüm environment variablesı gösterir.
+
+			-windowsta tek bir değişkeni görmek istersek de "$Env:<degisken_adi>" komutu kullanılır.
+
+			-"$Env:test="denemedir"" komutu ile kendimiz bir değişken tanımlayabiliriz.
+
+			-"Remove-Item Env:\test" ile değişken silinebilir.
+
+		-linuxta "printenv" hepsini, "echo $<degisken_adi>" bir tanesini gösterir
+
+			-oluşturmak için "export $test="denemedir"" komutu kullanılır.
+
+			-"unset test" ile silinebilir kontrolü echo ile yapılabilir. echo komutu boş satır döndürürse başarılı bir şekilde silinmiş demektir.
+
+
+		-------------------container oluşturuluken env var atanabilir.----------------
+
+		-docker container run -iy --env <variable>=<degeri> -e <variable>=<degeri> [IMAGE]
+
+		-environment variablelar case sensitivedir. yani VAR var Var birbirinden farklıdır.
+
+			root@44747d8448c0:/# echo $VAR1
+			deneme1
+			root@44747d8448c0:/# echo $VAR2
+			deneme2
+			___________________________________________________________________________
+			utkusinaorhan@ASUS-TUF-GAMING-F15:~$ echo $TERM
+			xterm-256color
+			
+			utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker container run -it --env TERM ubuntu bash
+			
+			root@f12942c9caf5:/# echo $TERM
+			xterm-256color
+			root@f12942c9caf5:/# exit
+			exit
+
+
+			-ana makinedeki variable değerini de bu şekilde containera atayabiliriz.
+
+
+			-----------------bir dosyaya yazılmış environment variableları tek seferde sisteme ekleyebiliriz.-------------------
+
+			-----"docker container run -it --env-file <dosya_ismi> [IMAGE]"------
+
+
+			-containera kurulmuş uygulama içinde hard-coded atanmış veritabanı bilgileri yerine veritabanı bağlantısı env var ile atanabilir ve başka bir düzenlemeye gerek kalmadan her ortamda ve container içinde çalıştırılabilir.
+
+			
