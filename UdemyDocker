@@ -1503,4 +1503,39 @@ _______________________________________________________________DERS 41
 
 			-containera kurulmuş uygulama içinde hard-coded atanmış veritabanı bilgileri yerine veritabanı bağlantısı env var ile atanabilir ve başka bir düzenlemeye gerek kalmadan her ortamda ve container içinde çalıştırılabilir.
 
-			
+
+
+___________________________________________________________________DERS 45
+
+	docker image
+
+		-uygulamanın paketlenmiş haline image denir. 
+		-docker image registry image depoları. default image registry docke hub.
+		-docker image isimleri üç parçadan oluşur.
+		- "registry URL/repository:tag"
+		- 	"docker.io/ubuntu:18.04"
+		- versiyon belirtilmemişse default olarak latest tag ile image çağrısı yapılır
+
+		-sisteme dockerhubdan image çekmek için terminale "docker image pull [IMAGE]" yazılır.
+
+		-docker hub harici başka bir registryden image çekerken tam adresi girmek gerekir örneğin google container registryden image çekerken:
+			"docker image pull gcr.io/google-containers/busybox:latest" komutu ile indirilebilir.
+
+		-"docker image pull" yerine direkt "docker pull" ile de çekilebilir. 
+
+
+___________________________________________________________________DERS 46
+
+	docker hub
+
+		-docker hub ile kendi oluşturduğum image repolarını depolayabilirim.
+		-terminalde docker login komutu sonrasında username ve password girerek de terminalimi docker huba bağlayabilirim.
+		-şuan ilk repomu oluşturdum henüz boş adı: dockerdeneme
+
+		-"docker image push <repo_uzantısı>" ile image repoya pushlanabilir.
+		
+		-mesela benimki için "docker image push utkusinaorhan/dockerdeneme:latest" yapılabilir.
+
+		-docker hub default atandığı için başına docker.io yazmaya gerek yok. 
+
+		-
