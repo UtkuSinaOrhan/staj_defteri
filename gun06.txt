@@ -1,0 +1,1 @@
+dockerda image nedir nasıl image çekilir ve tagleme nedir bunlara udemy ve yapayzekadan faydalanarak çalıştım.
