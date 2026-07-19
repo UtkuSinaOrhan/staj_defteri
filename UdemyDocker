@@ -1473,7 +1473,7 @@ _______________________________________________________________DERS 41
 
 		-------------------container oluşturuluken env var atanabilir.----------------
 
-		-docker container run -iy --env <variable>=<degeri> -e <variable>=<degeri> [IMAGE]
+		-docker container run -it --env <variable>=<degeri> -e <variable>=<degeri> [IMAGE]
 
 		-environment variablelar case sensitivedir. yani VAR var Var birbirinden farklıdır.
 
@@ -1564,7 +1564,7 @@ ________________________________________________________________________DERS 47
 		!! COPY | İmaj içine dosya veya klasör kopyalamak için kullanırız
 		Ör: COPY /source /user/src/app
 		
-		ADD | COPY ile aynı işi yapar yani dosya ya da klasör kopyalarsınız. Fakat ADD bunun yanında dosya kaynağının bir url olmasına da izin verir. Ayrıca ADD ile kaynak olarak bir .tar dosyası belirtilirse bu dosya imaja .tar olarak sıkıştırılmış haliyle değil de açılarak 		kopyalanır. 
+		ADD | COPY ile aynı işi yapar yani dosya ya da klasör kopyalarsınız. Fakat ADD bunun yanında dosya kaynağının bir url olmasına da izin verir. Ayrıca ADD ile kaynak olarak bir .tar dosyası belirtilirse bu dosya imaja .tar olarak sıkıştırılmış haliyle değil de açılarak kopyalanır. 
 		Ör: ADD https://wordpress.org/latest.tar.gz /temp
 		
 		ENV | Imaj içinde environment variable tanımlamak için kullanılır
@@ -1629,5 +1629,148 @@ ________________________________________________________________________DERS 47
 
 
 
+
+_________________________________________________________________________DERS 56
+	
+	exec ve shell form farkı:
+
+		-exec form CMD ["echo" , "$TEST"] gibi köşeli parantez ile yazılma şeklidir.
+
+		-shell form ise parantezsiz bir şekilde terminalde direkt çalıştırmak için kullanılan bir yöntemdir. CMD echo $TEST gibi kullanılır.
+
+		-exec ile shell arasındaki fark exec env var ile direkt iletişime geçemez. bu yüzden de istediğimiz değişkenleri kontrol edemeyiz. 
+		-ama shell gerçek bir terminal penceresi açar ve içinde oradaki satırı çalıştırır sonrasında da alınan çıktıyı terminalde output olarak yazar.
+
+_________________________________________________________________________DERS 57
+
+	multi-stage build:
+
+		"docker cp <container_adi>:<kopyalanacak_dosyanın_yolu> <kopyalanacak_yer>"
+
+
+		-yukarıdaki satırla herhangi bir konteyner içinden istenen bir dosyayı kopyalayabiliyoruz. çalışıyor veya durmuş olması önemsiz sılınmemiş olması yeterli.
+
+		-öncesinde bir kod için onun compilerı ile beraber yüksek boyutlara ulaşan bir image yaratıp sonra onu uzun işlemler sonucunda sadece runtimeı ile yeniden bir image yaratmak gerekiyordu.
+
+		-multi-stage builder ile bunu direkt tek seferde Dockerfile içinde yapabiliriz.
+
+		-ÖRNEK Dockerfile:
+		 	
+		 	_________________-ilk stage-_____________
+
+		 	FROM mcr.microsoft.com/java/jdk:8-zulu-alpine AS derleyici
+		 	COPY /source /usr/src/uygulama
+		 	WORKDIR /usr/src/uygulama
+		 	RUN javac uygulama.java
+
+
+		 	__________________-ikinci stage-_____________
+
+		 	FROM mcr.microsoft.com/java/jre:8-zulu-alpine
+		 	WORKDIR /uygulama
+		 	COPY --from=derleyici /usr/src/uygulama .
+		 	CMD ["java","uygulama"]
+
+
+
+
+
+___________________________________________________________________DERS 59
+
+	build ARG
+
+		ARG keywordu ile tanımlanmış adres ile versiyon değişimi kolayca yapılabilir.
+
+		-ÖRNEK Dockerfile:
+
+			FROM ubuntu:latest
+			WORKDIR /gecici
+			ARG VERSION
+			ADD https://www.python.org/ftp/python/$[VERSION]/Python-$[VERSION].tgz .
+			CMD ls -al
+
+		-Shell Komutu:
+
+			docker image build -t x1 --build-arg VERSION=3.7.1 .
+
+			"bunu yazdığında shell komutu sırasında image oluşturulurken versiyon ayarlanabilir."
+
+		-bu değişken illa versiyon değişkeni olmak zorunda değil her yerde kullanılan başka bir değişken de olabilir.
+
+		-container içinden erişilemez. environment variablelar gibi değiller.
+
+____________________________________________________________________DERS 60
+
+	docker commit
+
+		-docker commit ile container olarak kurulmuş yapıyı image olarak kaydedebiliyoruz.
+
+		__________con1 container'ını image olarak kaydettiğim kod:
+
+			utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker ps -a
+			CONTAINER ID   IMAGE           COMMAND   CREATED         STATUS                     PORTS     NAMES
+			6cab6e6b6755   ubuntu:latest   "bash"    2 minutes ago   Exited (0) 9 seconds ago             con1
+			
+			-> utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker commit con1 utkusinaorhan/con1:latest
+			sha256:46805b8a391693a4ee742cf96517cd073f7f0f0b78026d782fcf4b76d9c82f33
+			
+			utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker image ls
+                                                                                  i Info →   U  In Use
+			IMAGE                               ID             DISK USAGE   CONTENT SIZE   EXTRA
+			adanzyedocker:v1                    10631a62b96b        432MB          121MB
+			alpine:latest                       28bd5fe8b56d         13MB         3.93MB
+			app1:v1                             31acbf06b103        182MB         48.7MB
+			centos:7                            be65f488b776        301MB         76.1MB
+			hello-app:v1                        a4b3acfb88ea          9MB         2.81MB
+			httpd:alpine                        1b766f17b840       97.3MB         21.9MB
+			nginx:1.16                          d20aa6d1cae5        190MB           51MB
+			nginx:latest                        ec4ed8b5299e        241MB           66MB
+			node2:latest                        ee22339ef0f7       1.36GB          351MB
+			ozgurozturknet/webdb:latest         7f4395879908        604MB          151MB
+			ozgurozturknet/webkayit:latest      8816eb13e7f1        692MB          178MB
+			ubuntu:18.04                        152dc042452c       97.5MB         25.7MB
+			ubuntu:latest                       b7f48194d4d8        160MB         45.3MB    U
+			-> utkusinaorhan/con1:latest           46805b8a3916        303MB          105MB
+			utkusinaorhan/hello-docker:latest   4da4a3eb04b0        279MB         80.6MB
+			utkusinaorhan/merhaba:latest        2181a2aeb0c3        697MB          192MB
+			utkusinaorhan/node:latest           bde249ee74cf       1.36GB          351MB
+			utkusinaorhan/py:latest             e01c7cb9686b       97.1MB         23.9MB
+
+
+
+	-"-c" ile talimat girilebiliyor. -c 'CMD ["java", "uygulama"]' gibi
+
+________________________________________________________________________DERS 61
+
+	docker save - load
+
+		-docker save komutu ile sistemdeki bir imageı tar dosyası olarak kaydeebiliyoruz.
+		-daha sonra bu tar dosyasını usb bellek ile internet olmayan bir ortamda kullanabiliriz.
+
+		-"docker save utkusinaorhan/con1:latest -o con1image.tar"
+		komutu ile image kaydedilebilir.
+
+
+		kaydedilen imagei başka bir sistemde kullanabilmek için kullanılan komut:
+
+		-"docker load -i .\con1image.tar" ile image buraya oluşturulabilir.
+
+_______________________________________________________________________DERS 62
+
+	docker registry
+
+		-"docker pull registry" ile image çekilip bundan bir image deposu oluşturmak için bir container oluşturmak gerekir.
+
+		-"docker run -d -p 5000:5000 --restart always --name registry registry" kodu ile container oluşturulur.
+
+		-"docker image tag utkusinaorhan/merhaba:latest 127.0.0.1:5000/hello-app" ile yeni bir image oluşturulur.
+
+		-"docker image push 127.0.0.1:5000/hello-app:latest" ile 127.0.0.1:5000/v2/_catalog
+		linkindeki locak repositorye gönderilir.
+
+		-repolar "127.0.0.1:5000/v2/_catalog" linkinde bulunabilir.
+
+		-pull ile de çekilebilir.
+_______________________________________________________________________________________
 
 

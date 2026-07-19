@@ -1,0 +1,10 @@
+FROM eclipse-temurin:8-jdk-alpine AS birinci
+WORKDIR /usr/src/uygulama
+COPY source/ .
+RUN javac uygulama.java
+
+FROM eclipse-temurin:8-jre-alpine AS ikinci
+WORKDIR /uygulama
+COPY --from=birinci /usr/src/uygulama/ .
+
+CMD ["java", "uygulama"]

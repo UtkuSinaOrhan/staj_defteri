@@ -1,0 +1,268 @@
+1: İlk olarak sistemde bir temizlik yapalım ki alıştırmalarımızla çakışma olmasın. 
+Varsa sistemdeki tüm containerları silelim. 
+
+2: Docker logout ve docker login komutlarını kullanarak hesabımızdan logout olup tekrar login olalım. 
+
+->
+
+docker logout
+
+docker login -u utkusinaorhan
+password: ***********
+
+->
+
+
+3: Önceden oluşturduğunuz ve saklamanız gereken imajlar var ise bunları docker hub'a gönderin 
+ve ardından sistemdeki tüm imajları silin
+
+->
+docker image prune -a
+->
+
+4: Docker hub'da kendi hesabınız altinda "alistirma" adıyla public bir repository yaratın. 
+
+->oluşturdum.<-
+
+
+5: Centos imajının latest ve 7, ubuntu imajının latest, 18.04 ve 20.04, alpine imajının latest, 
+nginx imajının latest ve alpine tagli imajlarını sisteme çekin. 
+
+->
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull centos:7
+7: Pulling from library/centos
+2d473b07cdd5: Pull complete
+Digest: sha256:be65f488b7764ad3638f236b7b515b3678369a5124c47b8d32916d6487418ea4
+Status: Downloaded newer image for centos:7
+docker.io/library/centos:7
+Run 'docker pull --help' for more information
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull ubuntu:latest
+latest: Pulling from library/ubuntu
+a3679419df18: Pull complete
+ed819469700f: Pull complete
+e16351a257e4: Download complete
+Digest: sha256:651ba3fe3a830441e3deaf70fafac40d808a6bd2800a6f2c43130055159f23e6
+Status: Downloaded newer image for ubuntu:latest
+docker.io/library/ubuntu:latest
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull ubuntu:18.04
+18.04: Pulling from library/ubuntu
+Digest: sha256:152dc042452c496007f07ca9127571cb9c29697f42acbfad72324b2bb2e43c98
+Status: Downloaded newer image for ubuntu:18.04
+docker.io/library/ubuntu:18.04
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull ubuntu:20.04
+20.04: Pulling from library/ubuntu
+13b7e930469f: Pull complete
+d49f7165cd13: Download complete
+Digest: sha256:8feb4d8ca5354def3d8fce243717141ce31e2c428701f6682bd2fafe15388214
+Status: Downloaded newer image for ubuntu:20.04
+docker.io/library/ubuntu:20.04
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull alpine:latest
+latest: Pulling from library/alpine
+56dceff11b33: Download complete
+f5124fb579e2: Download complete
+Digest: sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+Status: Downloaded newer image for alpine:latest
+docker.io/library/alpine:latest
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull nginx:latest
+latest: Pulling from library/nginx
+cacfcdd01f30: Pull complete
+2bedaf25031a: Pull complete
+d26f27cc8c41: Pull complete
+82454cdbf456: Pull complete
+062e450697fa: Pull complete
+3c7ab7949321: Pull complete
+b6698f04e005: Pull complete
+6c496f5b5050: Download complete
+ea1d76ccc2c6: Download complete
+Digest: sha256:5a88c9c45479443d7be2eadc894b4ed0a9801bae03d97a5760ae13b5c2005942
+Status: Downloaded newer image for nginx:latest
+docker.io/library/nginx:latest
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker pull nginx:alpine
+alpine: Pulling from library/nginx
+3cd534fe98c6: Pull complete
+46f977ee452f: Pull complete
+62bec68d7c31: Pull complete
+46519e7231d2: Pull complete
+d0008c891db4: Pull complete
+390dc935348d: Pull complete
+1223f016b4e4: Pull complete
+cd757d6c129e: Download complete
+139c372786b9: Download complete
+Digest: sha256:7068961d45b07b2af510ac002e9daa63a1d3eba2111202d6768798690800fffd
+Status: Downloaded newer image for nginx:alpine
+docker.io/library/nginx:alpine
+
+<-
+
+6: ubuntu:18.04 imajına dockerhubkullaniciadiniz/alistirma:ubuntu olarak tag ekleyin ve ardından bu yeni imajı 
+docker hub'a gönderin. Alistirma repository'inizden imajı check edin. 
+
+->
+
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker tag ubuntu:18.04 utkusinaorhan/alistirma:ubuntu
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker image ls
+                                                                                  i Info →   U  In Use
+IMAGE                            ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest                    28bd5fe8b56d         13MB         3.93MB
+centos:7                         be65f488b776        301MB         76.1MB
+nginx:alpine                     7068961d45b0       93.6MB           27MB
+nginx:latest                     5a88c9c45479        241MB           66MB
+ubuntu:18.04                     152dc042452c       97.5MB         25.7MB
+ubuntu:20.04                     8feb4d8ca535        111MB         29.3MB
+ubuntu:latest                    651ba3fe3a83        161MB         45.3MB
+utkusinaorhan/alistirma:ubuntu   152dc042452c       97.5MB         25.7MB
+
+utkusinaorhan@ASUS-TUF-GAMING-F15:~$ docker push utkusinaorhan/alistirma:ubuntu
+The push refers to repository [docker.io/utkusinaorhan/alistirma]
+7c457f213c76: Mounted from utkusinaorhan/merhaba
+ubuntu: digest: sha256:dca176c9663a7ba4c1f0e710986f5a25e672842963d95b960191e2d9f7185ebe size: 424
+
+i Info → Not all multiplatform-content is present and only the available single-platform image was pushed
+         sha256:152dc042452c496007f07ca9127571cb9c29697f42acbfad72324b2bb2e43c98 -> sha256:dca176c9663a7ba4c1f0e710986f5a25e672842963d95b960191e2d9f7185ebe
+
+<-
+
+
+7:Bu alistirma.txt dosyasının olduğu klasörde bir Dockerfile oluşturun: 
+- Base imaj olarak nginx:latest imajını kullanın
+- İmaja LABEL="kendi adınız ve erişim bilgileriniz" şeklinde label ekleyiniz. 
+- KULLANICI adında bir enviroment variable tanımlayın ve değer olarak adınızı atayın
+- RENK adından bir build ARG tanımlayın
+- Sistemi update edin ve ardından curl, htop ve wget uygulamalarını kurun
+- /gecici klasörüne geçin ve https://wordpress.org/latest.tar.gz dosyasını buraya ekleyin
+- /usr/share/nginx/html klasörüne geçin ve html/${RENK}/ klasörünün içeriğini buraya kopyalayın
+- Healtcheck talimatı girelim. curl ile localhost'u kontrol etsin. Başlangıç periodu 5 saniye, deneme aralığı 30s ve
+zaman aşımı süresi de 30 saniye olsun. Deneme sayısı 3 olsun. 
+- Bu imajdan bir container yaratıldığı zaman ./script.sh dosyasının çalışmasını sağlayan talimatı exec formunda girin. 
+
+-> Dockerfile <-
+
+FROM nginx:latest
+
+LABEL maintainer="Utku Sina Orhan <utkusinaorhan0@gmail.com>"
+
+ENV KULLANICI=utkusinaorhan
+
+ARG RENK
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    htop \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /gecici
+ADD https://wordpress.org/latest.tar.gz /gecici/
+
+WORKDIR /usr/share/nginx/html
+COPY html/${RENK}/ .
+
+RUN chmod +x ./script.sh
+
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+ENTRYPOINT ["./script.sh"]
+<-
+
+
+8: Bu Dockerfile dosyasından 2 imaj yaratın. Birinci imajda build ARG olarak RENK:kirmizi ikinci imajda da
+build ARG olarak RENK:sari kullanın. Kirmizi olan imajın tagi dockerhubkullaniciadiniz/alistirma:kirmizi 
+Sari olan imajin tagi dockerhubkullaniciadiniz/alistirma:sari olsun. 
+
+->
+
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker image ls
+                                                                                  i Info →   U  In Use
+IMAGE                             ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest                     28bd5fe8b56d         13MB         3.93MB
+centos:7                          be65f488b776        301MB         76.1MB
+nginx:alpine                      7068961d45b0       93.6MB           27MB
+nginx:latest                      5a88c9c45479        241MB           66MB
+ubuntu:18.04                      152dc042452c       97.5MB         25.7MB
+ubuntu:20.04                      8feb4d8ca535        111MB         29.3MB
+ubuntu:latest                     651ba3fe3a83        161MB         45.3MB
+utkusinaorhan/alistirma:ubuntu    152dc042452c       97.5MB         25.7MB
+utkusinaorhan/alistirma:kirmizi   74c3ffcf9b2d        300MB         93.5MB
+utkusinaorhan/alistirma:sari      8ecfe99456bd        300MB         93.5MB
+
+<-
+
+
+
+
+9: dockerhubkullaniciadiniz/alistirma:kirmizi imajını kullanarak bir container yaratın. Detach olsun.
+Makinenin 80 portuna gelen istekler bu containerın 80 portuna gitsin. Container adi kirmizi olsun.
+Browser'dan http://127.0.0.1 sayfasına gidip check edin.  
+
+->
+
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker container run -d -p 80:80 --name kirmizi utkusinaorhan/alistirma:kirmizi
+fcf7a89d1e431aa77c1d81d7ea930a1ba2e38c20a0838034cfa9eb63cf94f288
+
+<-
+
+
+10: dockerhubkullaniciadiniz/alistirma:sari imajını kullanarak bir container yaratın. Detach olsun.
+Makinenin 8080 portuna gelen istekler bu containerın 80 portuna gitsin.
+KULLANICI enviroment variable değerini "Deneme" olarak atayın. Container adi sari olsun. 
+Browser'dan http://127.0.0.1:8080 sayfasına gidip check edin.
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker container run -d -p 8080:80 --env KULLANICI="Deneme" --name sari utkusinaorhan/alistirma:sari
+b15db3c99966611046b986f8b7f5f7957cd2fbd3bd1124dd3c556de3c07948aa
+<-
+
+11: Containerları kapatıp silelim. 
+
+->sildim<-
+
+12: Bu alistirma.txt dosyasının olduğu klasörde Dockerfile.multi isimli bir Dockerfile oluşturun: 
+- Bu multi stage build alıştırması olacak. 
+- Birinci stage'i  mcr.microsoft.com/java/jdk:8-zulu-alpine imajından oluşturun ve stage adı birinci olsun
+
+-----!!! Microsoft bu imajı sunmayı bırakmış o yüzden eclipse temurinden çektim.!!!-----------
+
+- /usr/src/uygulama klasörüne geçin ve source klasörünün içeriğini buraya kopyalayın
+- "javac uygulama.java" komutunu çalıştırarak uygulamanızı derleyin
+- mcr.microsoft.com/java/jre:8-zulu-alpine imajından ikinci aşamayı başlatın. 
+- /uygulama klasörüne geçin ve birinci aşamadıki imajın /usr/src/uygulama klasörünün içeriğini buraya kopyalayın
+- Bu imajdan container yaratıldığı zaman "java uygulama" komutunun çalışması için talimat girin
+
+
+->
+FROM eclipse-temurin:8-jdk-alpine AS birinci
+WORKDIR /usr/src/uygulama
+COPY source/ .
+RUN javac uygulama.java
+
+FROM eclipse-temurin:8-jre-alpine AS ikinci
+WORKDIR /uygulama
+COPY --from=birinci /usr/src/uygulama/ .
+
+CMD ["java", "uygulama"]
+->
+
+
+13: Bu Dockerfile.multi dosyasından dockerhubkullaniciadiniz/alistirma:java tagli bir imaj yaratın. 
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker build -f Dockerfile.multi -t utkusinaorhan/alistirma:java .
+->
+
+14: Bu imajdan bir container yaratın ve java uygulamanızın çıkardığı mesajı görün.
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker container run utkusinaorhan/alistirma:java
+Merhaba ben bir java konsol uygulamasiyim
+->
+
+
+15: dockerhubkullaniciadiniz/alistirma:kirmizi, dockerhubkullaniciadiniz/alistirma:sari, dockerhubkullaniciadiniz/alistirma:java
+imajlarını Docker hub'a yollayın. 
+
+->
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker push utkusinaorhan/alistirma:kirmizi
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker push utkusinaorhan/alistirma:sari
+PS C:\Users\UtkuSinaOrhan\Desktop\staj_defteri\gun09_alistirma> docker push utkusinaorhan/alistirma:java
+->
