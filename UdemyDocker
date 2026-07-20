@@ -1773,4 +1773,254 @@ _______________________________________________________________________DERS 62
 		-pull ile de çekilebilir.
 _______________________________________________________________________________________
 
+	docker compose
+
+		-Docker Compose, birden fazla Docker konteynerini tek bir yerden, tek bir komutla tanımlanmasını ve yönetilmesini sağlayan bir araçtır.
+		-Nasıl Çalışır?
+		-Süreç temel olarak 3 adımdan oluşur:
+
+		-Ortamı Tanımlama (Dockerfile): Her bir servisinizin (uygulama parçanızın) ortamını kendi Dockerfile dosyası ile belirlersiniz.
+
+		-Servisleri Listeleme (docker-compose.yml): Projenizin kök dizinine docker-compose.yml adında bir YAML dosyası oluşturursunuz. Bu dosyada hangi servislerin çalışacağını, hangi portları kullanacaklarını ve birbirlerine nasıl bağlanacaklarını yazarsınız.
+
+		-Tek Komutla Çalıştırma: Terminalde projenin olduğu klasöre gelip tek bir komut yazarsınız: "docker-compose up"
+
+		-Özetle: Docker Compose, mikroservis veya çoklu konteyner mimarisine sahip projeleri yerel bilgisayarınızda (veya test ortamlarında) "tak-çalıştır" haline getiren bir orkestrasyon aracıdır. Projeyi durdurmak istediğinizde ise sadece docker-compose down yazmanız yeterlidir.
+
+_______________________________________________________________________DERS 66
+
+	docker compose CLI
+
+		-docker compose cli komutları sadece docker-compose.yml dosyasının olduğu dizinde işe yarar.
+		-servis isimleri bulunduğuklasör_sevisadı şeklinde olur.
+		-docker-compose up ile oluşan sevisler CTRL+C ile durdurulur ama silinmez.
+		-docker-compose down ile sevisler silinir.
+		-docker-compose up -d ile terminale geri döner.
+
+		-docker-compose config ile .yml dosyası tersten bir şekilde gösterilir.
+		
+		-docker-compose images ile oluşturulan servislerin hangi imajlarla oluştuğunu gösterir.
+
+		-docker-compose logs ile ayaktaki servisin logları takip edilir.
+		
+		-"docker-compose exec <sevis_adi> <komut(ls -al)>" ile compose ile oluşturulan servis içinde komut çalıştırılabilir.
+		
+		-.yml dosyası ile oluşturulan volumeler docker-compose down ile silinmez.
+
+		-docker-compose.yml dosyasının adı farklı olabilir.
+		-docker-deneme.yml ise -f ile dosya adını girmek gerekir.
+
+		-docker compose build ile docker-compose up yaparken kullanılacak image oluşturulabilir.
+
+		-docker-compose.yml dosyası içinde services kısmında servs oluşturulurken "build: ." ile aynı dizinde bulunan Dockerfile ile image kullanılır ve o servis o image ile oluşturulur.
+
+		-"docker-compose down" ile volumeler ve imageler silinmez yeniden up olurken vakit kaybı olmaması adına
+
+		-imagede bir değişiklik yapıldığında up yapıldığında container güncellenmez.
+		
+		-güncelleme yapılması için "docker-compose build" komutu girilir sonra up ile güncel hali ayağa kaldırılır.
+
+__________________________________________________________________________DERS 69
+
+	docker container orchestration
+
+		-Docker Container Orchestration (Konteynır Orkestrasyonu), yüzlerce veya binlerce Docker konteynırının yayına alınmasını, yönetilmesini, ölçeklenmesini ve ağ iletişimini otomatikleştiren sistemlerin genel adıdır.
+
+		-Birkaç konteynırı bilgisayarınızda elle çalıştırmak kolaydır. Ancak canlı ortamda (production) yüzlerce mikroservis çalıştığında bunları elle takip etmek imkansız hale gelir.
+__________________________________________________________________________DERS 70
+	
+	docker swarm
+
+		-docker engine içine gömülü bir moddur. 
+
+		-hostlardan biri manager host olur ve sistemdeki diğer hostlar worker olur.
+		
+		-her container bu managerdan kontrol edilir.
+
+		-raft algoritmasının sorunsuz çalışabilmesi için bir clusterda tek sayıda ve max 7 manager kurulmalıdır.
+
+		-tüm cluster bilgisi manager node üzerinde bulunur.
+
+		-"docker swarm init --advertise-addr 192.168.0.13" ile girilen adres üzerinde bir manager node oluşturulur.
+
+		-diğer makineleri bağlamak için gereken komut yukarıdaki init komutunun çıktısında verilen komuttur.
+
+		-aynı clustera başka bir manager eklemek için gereken komutu da "docker swarm join-token manager" komutunun çıktısında bulabiliriz.
+
+		-worker eklemek için gereken komut "docker swarm join-token worker" komutunun çıktısındaki komuttur.
+
+		-"docker node ls" cluster ile ilgili bilgiler verir.
+
+		-"docker service create --name test --replicas=5 -p 8080:80 nginx" komutu ile test adında altında 5 container olan 8080 portunu publish eden ve bunu bu containerların 80 portuna gönderen nginx imajlı bir service oluşturulur.
+
+		-"docker service ps test" komutu ile test servisinin detayları görülebilir.
+
+		-default olarak manager nodelar da worker node olarak davranır.
+
+		-bir sistem shutdown olursa müsait olan diğer sistem üzerine o container gönderilir ve orada çalışmaya devam eder.
+
+		-cluster bunu sağlar.
+
+_________________________________________________________________________DERS 73
+
+	docker service
+
+		-docker swarm clusterda oluşturabileceğimiz en temel obje servislerdir.
+
+		-"docker container run" yerine cluster oluşturduktan sonra bir sistemi ayağa kaldırmak için "docker service create" komutu kulanılır.
+
+		-clusterda deklare edilen ile current state arasında fark varsa swarm bunu optimize etmek için kullanılır.
+
+		-service manager node üzerinde çalıştırılır. hatta tüm işlemler manager node üzerinde çalıtırılır.
+
+		-"docker service inspect <service_adı>" ile servis detayına bakılır.
+
+		-desire state ile current state sürekli birbirini takip eder. ufak bir değişiklikte bile current state güncellenerek desire state yakalanır.
+
+		-"docker service logs <service-adi>" ile servisin logları izlenir.
+
+		-"docker service scale <servis_adı>=<istenen_container_sayısı>" komutu ile servisin boyutu ayarlanır. bu sistemi kısa yoldan yönetmek için önemlidir.
+
+		-"docker service rm <servis_adı>" ile servis direkt silinir.
+
+		-"docker service create" komutu ile default olarak replicated tarzda service yaratılır. 
+
+		- bir servisin global olması için girilmesi gereken terminal komutu:
+		 "docker service create --name global --mode=global nginx" tüm nodelarda birer replika(container) yaratır.
+
+		-eğer global service modunda bir container worker node üzerinden silinirse veya başka bir felaket durumu ile karşılaşırsa aynı worker node üzerinde yeniden oluşturulur.
+
+		-replicated mod ile kurulan bir serviste aynı olay yaşandığında bu container aynı clusterda başka bir node üzerinde oluşturulur.
+
+		-global ve replicated service arasındaki fark budur.
+
+		-oluşturulan bir servisi güncellemek için swarm bize kolaylık sağlıyor.
+
+		-"docker service update -d --update-delay 5s --update-parallelism 2 --image [IMAGE_NAME] [SERVICE_NAME]" ile service güncellenir.
+
+		- "--update-delay duration" containerlar update esnasında silinip yeniden kurulur. bu komut bu iki işlem arasında bir gecikme olması istenirse kullanılır.
+
+		- "--update-parallelism unit" update işlemi birimlerde teker teker yapılır. bu komut ile aynı anda kaç farklı birim güncellensin isteniyorsa unit yerine o sayı yazılır.
+
+		- "--image" neyi update etmek istersek o girilir. örnekte image update edileceği için --image girilmiş.
+		
+		-bu işlem ile örneğin imaj:v1 versiyonu ile imaj:v2 versiyonu değişikliği yapılacak ama imaj:v2 versiyonu beklendiği gibi çalışmıyorsa veya hatalıysa bunu rollback ile eski haline getirebiliriz.
+
+		-"docker service rollback -d [SERVICE_NAME]" ile updatein bir önceki adımına geri dönülür.
+
+
+___________________________________________________________________________DERS 75
+
+	docker overlay network
+
+		-Docker Overlay Network, farklı fiziksel veya sanal sunucular (node) üzerinde çalışan Docker konteynırlarının, sanki hepsi aynı sunucudaymış ve aynı yerel ağa (LAN) bağlıymış gibi birbiriyle doğrudan ve güvenli iletişim kurmasını sağlayan sanal bir ağ sürücüsüdür.
+
+		-Normalde varsayılan bridge ağı sadece tek bir sunucu içindeki konteynırları konuşturabilir. Ancak ortamınız bir cluster haline geldiğinde, sunucular arası konteynır iletişimini sağlamak için overlay network kullanılır.
+
+		-"docker network create -d overlay [NAME]" komutu ile overlay network oluşturulur.
+
+		-"docker network inspect [NAME]" ile adı girilen networkün özelliklerine erişilir.
+
+		-servis create aşamasında --network [overlay network adı] ile replikalar arası bağlantı kurulur.
+
+		-bu cluster üzerinde container olmayan nodelardan da oluşturulan bu containera ulaşılabilir.
+
+
+____________________________________________________________________________DERS 78
+
+	docker secret
+
+		-Docker Secret, şifreler, API anahtarları, SSH anahtarları ve veritabanı bağlantı dizileri gibi hassas verileri (sensitive data) güvenli bir şekilde saklamak ve konteynırlara iletmek için kullanılan bir Docker özelliğidir.
+
+		-Kodların içine şifre gömmek veya ortam değişkenlerinde (ENV) açık metin (plaintext) olarak hassas veri tutmak ciddi bir güvenlik açığı yaratır. Docker Secret bu problemi çözer.
+
+		-"docker secret create kullanici_adi .\kullaniciadi.txt" belirtilen txt dosyasını kullanıcı adı olarak yaratır.
+
+		-"docker secret create sifre .\sifre.txt" sifre secretı oluşturulur.
+
+		-"docker secret ls" komutu ile secretlar listelenir.
+
+		-"docker secret inspect sifre" komutu ile sifre secretı incelenir ama değeri görünmez.
+
+		-encrypted olarak tutulur ve gönderilir.
+
+		-"echo "bu bir denemedir" | docker secret create deneme -" şeklinde konsol üzerinden de secret oluşturulabilir.
+
+		- "--secret [SECRET_NAME]" opsiyonuyla service oluşturulurken secret atanabilir.
+
+		-eğer secret değiştirilecekse yeni secret oluşturulur ve yer değiştirilir.
+		-secret içeriği değiştirilemez.
+
+		-"echo "akflşasfkş" | docker secret create sifre2" ile yeni secret oluşturulur
+
+		-"docker service update --secret-rm sifre --secret-add sifre2" komutu ile service secretı değiştirilir.
+
+_________________________________________________________________________DERS 79
+
+	docker stack
+
+		-Docker Stack, Docker Swarm üzerinde çalışan ve birden fazla servisin (service), ağın (network) ve secret/volume gibi kaynakların tek bir dosya (docker-compose.yml) üzerinden yönetilmesini sağlayan üst seviye bir komut yapısıdır.
+
+		-Tek bir sunucuda docker-compose kullanarak konteynır grubunuzu ayağa kaldırmaya alışkınsanız, Docker Stack bunun Swarm cluster ölçeğindeki karşılığıdır.
+
+		-> docker stack için örnek bir docker-compose.yml dosyası <- 
+		
+->
+		version: '3.8'
+
+		services:
+		  web:
+		    image: nginx:latest
+		    ports:
+		      - "80:80"
+		    networks:
+		      - app-net
+		    deploy:
+		      replicas: 4              # Cluster genelinde 4 kopya çalışsın
+		      update_config:
+		        parallelism: 2        # Güncellerken 2'şer 2'şer güncelle (Rolling update)
+		        delay: 10s
+		      restart_policy:
+		        condition: on-failure
+		      placement:
+		        constraints:
+		          - node.role == worker  # Sadece Worker node'larda çalışsın
+		
+		  db:
+		    image: postgres:15
+		    environment:
+		      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+		    secrets:
+		      - db_password
+		    networks:
+		      - app-net
+		
+		networks:
+		  app-net:
+		    driver: overlay            # Sunucular arası iletişim için overlay ağı
+		
+		secrets:
+		  db_password:
+		    external: true
+<-
+
+-Temel Docker Stack Komutları
+
+		-Uygulama Başlatmak:
+		"docker stack deploy"
+
+		-Uygulamayı Dağıtmak/Yayına Almak:
+		"docker stack deploy -c docker-stack.yml my_app_stack"
+		
+		-Çalışan Stack'leri Listelemek:
+		"docker stack ls"
+
+		-Stack İçindeki Servisleri Görmek:
+		"docker stack services my_app_stack"
+		
+		-Stack İçindeki Konteynırların Hangi Sunucularda Çalıştığını Görmek:
+		"docker stack ps my_app_stack"
+		
+		-Tüm Yapıyı ve Servisleri Kaldırmak:	
+		"docker stack rm my_app_stack"
 
