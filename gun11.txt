@@ -1,3 +1,5 @@
+20 temmuz 2026
+
 docker orchestration için swarm kullanımını öğrendim.
 swarm nedir ne işe yarar gibi sorulara cevap buldum.
 service yapısı, replikalar, cluster yapısı, manager ve worker node işlemleri gibi konuları öğrendim.

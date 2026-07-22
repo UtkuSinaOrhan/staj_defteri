@@ -1,3 +1,4 @@
+07 temmuz 2026
 docker network driverlar ve port publish nedir ne zaman kullanılır ve ne işe yararlar onu öğrendim.
 öğrendiğim şeylerle ilgili alıştırmalar yaptım.
 bunları yaparken udemy ve yapay zeka içeriklerini kullandım.

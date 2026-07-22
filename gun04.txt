@@ -1,3 +1,4 @@
+08 temmuz 2026
 dockerda network kurma aşamasında user defined bridge network kurmayı ve kullanmayı öğrendim.
 bu konuda kullanılması gereken aşağıdaki kodlarda olan linux terminal araçlarını öğrendim.
 subnet , ip range ve gateway atanmış udbn oluşturmayı öğrendim.

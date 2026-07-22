@@ -1,3 +1,4 @@
+16 temmuz 2026
 --build-arg keywordune ve docker commit komutunu öğrendim. docker save - load
 komutlarına çalıştım. docker registry ile local docker image reposu oluşturmayı 
 öğrendim. docker image ve registry bölüm sonu alıştırmasını yaptım.
